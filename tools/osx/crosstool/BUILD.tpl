@@ -2,7 +2,7 @@ package(default_visibility = ["//visibility:public"])
 
 load("@local_config_cc_toolchains//:osx_archs.bzl", "OSX_TOOLS_ARCHS")
 load("@rules_cc//cc:defs.bzl", "cc_toolchain_suite", "cc_library")
-load(":cc_toolchain_config.bzl", "cc_toolchain_config")
+load(":cc_toolchain_config.bzl", "cc_toolchain_config", "toolchain_binary")
 
 # Reexporting osx_arch.bzl for backwards compatibility
 # Originally this file was present in @local_config_cc, but with the split in
@@ -10,6 +10,9 @@ load(":cc_toolchain_config.bzl", "cc_toolchain_config")
 # @local_config_cc_toolchains. This alias is there to keep the code backwards
 # compatible (and serves no other purpose).
 alias(name = "osx_archs.bzl", actual = "@local_config_cc_toolchains//:osx_archs.bzl")
+
+toolchain_binary(name="wrapped_clang", src="@bazel_tools//tools/osx/crosstool:wrapped_clang.cc")
+toolchain_binary(name="wrapped_clang_pp", src="@bazel_tools//tools/osx/crosstool:wrapped_clang.cc")
 
 CC_TOOLCHAINS = [(
     cpu + "|compiler",
@@ -85,6 +88,8 @@ cc_toolchain_suite(
     cc_toolchain_config(
         name = (arch if arch != "armeabi-v7a" else "stub_armeabi-v7a"),
         compiler = "compiler",
+        wrapped_clang = ":wrapped_clang",
+        wrapped_clang = ":wrapped_clang_pp",
         cpu = arch,
         cxx_builtin_include_directories = [
 %{cxx_builtin_include_directories}

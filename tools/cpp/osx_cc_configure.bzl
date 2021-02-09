@@ -53,35 +53,6 @@ def _get_escaped_xcode_cxx_inc_directories(repository_ctx, cc, xcode_toolchains)
 
     return include_dirs
 
-def _compile_cc_file(repository_ctx, src_name, out_name):
-    env = repository_ctx.os.environ
-    xcrun_result = repository_ctx.execute([
-        "env",
-        "-i",
-        "DEVELOPER_DIR={}".format(env.get("DEVELOPER_DIR", default = "")),
-        "xcrun",
-        "--sdk",
-        "macosx",
-        "clang",
-        "-mmacosx-version-min=10.9",
-        "-std=c++11",
-        "-lc++",
-        "-O3",
-        "-o",
-        out_name,
-        src_name,
-    ], 30)
-    if (xcrun_result.return_code != 0):
-        error_msg = (
-            "return code {code}, stderr: {err}, stdout: {out}"
-        ).format(
-            code = xcrun_result.return_code,
-            err = xcrun_result.stderr,
-            out = xcrun_result.stdout,
-        )
-        fail(out_name + " failed to generate. Please file an issue at " +
-             "https://github.com/bazelbuild/bazel/issues with the following:\n" +
-             error_msg)
 
 def configure_osx_toolchain(repository_ctx, overriden_tools):
     """Configure C++ toolchain on macOS.
@@ -121,6 +92,10 @@ def configure_osx_toolchain(repository_ctx, overriden_tools):
         # cc_wrapper.sh script. The wrapped_clang binary is already hardcoded
         # into the Objective-C crosstool actions, anyway, so this ensures that
         # the C++ actions behave consistently.
+
+        # Consider building cc_wrapper.sh an in action with a dep on
+        # wrapped_clang
+        # e.g. bazel-out/host/bin/external/local_config_cc/wrapped_clang
         cc = repository_ctx.path("wrapped_clang")
 
         cc_path = '"$(/usr/bin/dirname "$0")"/wrapped_clang'
@@ -151,13 +126,6 @@ def configure_osx_toolchain(repository_ctx, overriden_tools):
         libtool_check_unique_src_path = str(repository_ctx.path(
             paths["@bazel_tools//tools/objc:libtool_check_unique.cc"],
         ))
-        _compile_cc_file(repository_ctx, libtool_check_unique_src_path, "libtool_check_unique")
-        wrapped_clang_src_path = str(repository_ctx.path(
-            paths["@bazel_tools//tools/osx/crosstool:wrapped_clang.cc"],
-        ))
-        _compile_cc_file(repository_ctx, wrapped_clang_src_path, "wrapped_clang")
-        repository_ctx.symlink("wrapped_clang", "wrapped_clang_pp")
-
         tool_paths = {}
         gcov_path = repository_ctx.os.environ.get("GCOV")
         if gcov_path != None:

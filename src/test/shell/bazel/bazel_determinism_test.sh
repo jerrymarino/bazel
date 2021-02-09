@@ -65,6 +65,13 @@ function test_determinism()  {
       --nostamp \
       //src:bazel
     hash_outputs >"${TEST_TMPDIR}/sum1"
+    echo
+    echo === BazelServer_deploy.jar ===
+    zipinfo bazel-bin/src/main/java/com/google/devtools/build/lib/bazel/BazelServer_deploy.jar
+    echo
+    echo === package_jdk_minimal.zip ===
+    zipinfo bazel-bin/src/package_jdk_minimal.zip
+    echo
 
     # Build Bazel twice.
     bazel-bin/src/bazel \
@@ -76,6 +83,13 @@ function test_determinism()  {
       --nostamp \
       //src:bazel
     hash_outputs >"${TEST_TMPDIR}/sum2"
+    echo
+    echo === BazelServer_deploy.jar ===
+    zipinfo bazel-bin/src/main/java/com/google/devtools/build/lib/bazel/BazelServer_deploy.jar
+    echo
+    echo === package_jdk_minimal.zip ===
+    zipinfo bazel-bin/src/package_jdk_minimal.zip
+    echo
 
     if ! diff -U0 "${TEST_TMPDIR}/sum1" "${TEST_TMPDIR}/sum2" >$TEST_log; then
       fail "Non-deterministic outputs found!"
